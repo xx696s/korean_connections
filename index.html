@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korean Connections</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'NYT Franklin', Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #000;
+            line-height: 1.4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .game-container {
+            max-width: 540px;
+            width: 100%;
+        }
+        
+        /* Шапка */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .header h1 {
+            color: #000;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        
+        /* Сетка слов */
+        .words-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .word-card {
+            background-color: #fff;
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+        
+        .word-card:hover {
+            background-color: #f8f8f8;
+        }
+        
+        .word-card.selected {
+            background-color: #000;
+            color: #fff;
+            border-color: #000;
+        }
+        
+        /* Панель ошибок и кнопок */
+        .game-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+        
+        .mistakes {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .mistakes-circles {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .mistake-circle {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #000;
+            transition: background-color 0.3s ease;
+        }
+        
+        .mistake-circle.lost {
+            background-color: #fff;
+            border: 2px solid #000;
+        }
+        
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            padding: 8px 16px;
+            border: 2px solid #000;
+            border-radius: 20px;
+            background-color: #fff;
+            color: #000;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .control-btn:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .control-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .submit-btn {
+            background-color: #000;
+            color: #fff;
+        }
+        
+        .submit-btn:disabled {
+            background-color: #ccc;
+            border-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        
+        .submit-btn:not(:disabled):hover {
+            background-color: #333;
+        }
+        
+        /* Найденные категории */
+        .categories {
+            margin-top: 30px;
+        }
+        
+        .category {
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 16px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Цвета категорий как в оригинале */
+        .category.yellow { background-color: #FFD166; color: #000; }
+        .category.green { background-color: #06D6A0; color: #000; }
+        .category.blue { background-color: #118AB2; color: #fff; }
+        .category.purple { background-color: #8338EC; color: #fff; }
+        
+        /* Сообщение о победе/проигрыше */
+        .game-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 1000;
+            animation: popIn 0.3s ease;
+            border: 2px solid #000;
+            max-width: 300px;
+            width: 90%;
+        }
+        
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        .game-message h2 {
+            color: #000;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        
+        .game-message button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #000;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 0 10px;
+            }
+            
+            .words-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+            
+            .word-card {
+                padding: 10px 6px;
+                font-size: 14px;
+                min-height: 50px;
+            }
+            
+            .header h1 {
+                font-size: 28px;
+            }
+            
+            .game-controls {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            
+            .buttons-container {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>Korean Connections</h1>
+            <p>Create four groups of four!</p>
+        </div>
+
+        <div class="words-grid" id="words-grid">
+            <!-- Слова появятся здесь через JavaScript -->
+        </div>
+
+        <div class="game-controls">
+            <div class="mistakes">
+                <span>Mistakes Remaining:</span>
+                <div class="mistakes-circles" id="mistakes-circles">
+                    <div class="mistake-circle"></div>
+                    <div class="mistake-circle"></div>
+                    <div class="mistake-circle"></div>
+                    <div class="mistake-circle"></div>
+                </div>
+            </div>
+            
+            <div class="buttons-container">
+                <button class="control-btn" id="shuffle-btn">Shuffle</button>
+                <button class="control-btn" id="deselect-btn">Deselect All</button>
+                <button class="control-btn submit-btn" id="submit-btn" disabled>Submit</button>
+            </div>
+        </div>
+
+        <div class="categories" id="categories">
+            <!-- Найденные категории появятся здесь -->
+        </div>
+    </div>
+
+    <script>
+        // Данные игры - слова и категории
+        const gameData = {
+            words: [
+                // Категория 1: Еда (желтая)
+                { id: 1, text: '사과', category: 1, translation: 'яблоко' },
+                { id: 2, text: '바나나', category: 1, translation: 'банан' },
+                { id: 3, text: '오렌지', category: 1, translation: 'апельсин' },
+                { id: 4, text: '포도', category: 1, translation: 'виноград' },
+                
+                // Категория 2: Цвета (зеленая)
+                { id: 5, text: '빨강', category: 2, translation: 'красный' },
+                { id: 6, text: '파랑', category: 2, translation: 'синий' },
+                { id: 7, text: '초록', category: 2, translation: 'зеленый' },
+                { id: 8, text: '노랑', category: 2, translation: 'желтый' },
+                
+                // Категория 3: Семья (синяя)
+                { id: 9, text: '어머니', category: 3, translation: 'мать' },
+                { id: 10, text: '아버지', category: 3, translation: 'отец' },
+                { id: 11, text: '형', category: 3, translation: 'старший брат' },
+                { id: 12, text: '누나', category: 3, translation: 'старшая сестра' },
+                
+                // Категория 4: Дом (фиолетовая)
+                { id: 13, text: '집', category: 4, translation: 'дом' },
+                { id: 14, text: '방', category: 4, translation: 'комната' },
+                { id: 15, text: '문', category: 4, translation: 'дверь' },
+                { id: 16, text: '창문', category: 4, translation: 'окно' }
+            ],
+            
+            categories: {
+                1: { name: '🍎 Еда', colorClass: 'yellow', description: 'Фрукты и продукты' },
+                2: { name: '🎨 Цвета', colorClass: 'green', description: 'Названия цветов' },
+                3: { name: '👨‍👩‍👧‍👦 Семья', colorClass: 'blue', description: 'Члены семьи' },
+                4: { name: '🏠 Дом', colorClass: 'purple', description: 'Предметы в доме' }
+            }
+        };
+
+        // Переменные игры
+        let selectedWords = [];
+        let foundCategories = [];
+        let mistakes = 0;
+        let currentGameWords = [];
+
+        // Инициализация игры при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            initGame();
+            
+            // Назначаем обработчики для кнопок
+            document.getElementById('submit-btn').addEventListener('click', checkSelection);
+            document.getElementById('shuffle-btn').addEventListener('click', shuffleWords);
+            document.getElementById('deselect-btn').addEventListener('click', deselectAll);
+        });
+
+        // Инициализация новой игры
+        function initGame() {
+            selectedWords = [];
+            foundCategories = [];
+            mistakes = 0;
+            
+            // Выбираем все 16 слов
+            currentGameWords = [...gameData.words];
+            
+            // Перемешиваем слова
+            shuffleWords();
+            
+            updateUI();
+        }
+
+        // Перемешивание слов
+        function shuffleWords() {
+            shuffleArray(currentGameWords);
+            renderWords();
+        }
+
+        // Перемешивание массива
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Отображение слов в сетке
+        function renderWords() {
+            const wordsGrid = document.getElementById('words-grid');
+            wordsGrid.innerHTML = '';
+            
+            currentGameWords.forEach(word => {
+                const wordCard = document.createElement('div');
+                wordCard.className = 'word-card';
+                wordCard.textContent = word.text;
+                wordCard.setAttribute('data-word-id', word.id);
+                
+                // Проверяем, выбрано ли слово
+                if (selectedWords.find(sw => sw.id === word.id)) {
+                    wordCard.classList.add('selected');
+                }
+                
+                wordCard.addEventListener('click', () => toggleWordSelection(word));
+                wordsGrid.appendChild(wordCard);
+            });
+        }
+
+        // Выбор/снятие выбора слова
+        function toggleWordSelection(word) {
+            const existingIndex = selectedWords.findIndex(sw => sw.id === word.id);
+            
+            if (existingIndex > -1) {
+                // Снимаем выбор
+                selectedWords.splice(existingIndex, 1);
+            } else if (selectedWords.length < 4) {
+                // Добавляем выбор
+                selectedWords.push(word);
+            }
+            
+            renderWords();
+            updateUI();
+        }
+
+        // Снять выделение со всех слов
+        function deselectAll() {
+            selectedWords = [];
+            renderWords();
+            updateUI();
+        }
+
+        // Обновление интерфейса
+        function updateUI() {
+            // Обновляем кнопку Submit
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = selectedWords.length !== 4;
+            
+            // Обновляем кружочки ошибок
+            updateMistakesCircles();
+            
+            // Отображаем найденные категории
+            renderFoundCategories();
+        }
+
+        // Обновление кружочков ошибок
+        function updateMistakesCircles() {
+            const circlesContainer = document.getElementById('mistakes-circles');
+            const circles = circlesContainer.querySelectorAll('.mistake-circle');
+            
+            circles.forEach((circle, index) => {
+                if (index < (4 - mistakes)) {
+                    circle.classList.remove('lost');
+                } else {
+                    circle.classList.add('lost');
+                }
+            });
+        }
+
+        // Отображение найденных категорий
+        function renderFoundCategories() {
+            const categoriesContainer = document.getElementById('categories');
+            categoriesContainer.innerHTML = '';
+            
+            foundCategories.forEach(category => {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = `category ${category.colorClass}`;
+                categoryElement.innerHTML = `
+                    <div>${category.name}</div>
+                    <small>${category.description}</small>
+                `;
+                categoriesContainer.appendChild(categoryElement);
+            });
+        }
+
+        // Проверка выбранных слов
+        function checkSelection() {
+            if (selectedWords.length !== 4) return;
+            
+            const categories = selectedWords.map(word => word.category);
+            const allSameCategory = categories.every(cat => cat === categories[0]);
+            
+            if (allSameCategory) {
+                // Правильно угадана категория
+                handleCorrectGuess(categories[0]);
+            } else {
+                // Неправильная попытка
+                handleWrongGuess();
+            }
+        }
+
+        // Обработка правильной догадки
+        function handleCorrectGuess(categoryId) {
+            const category = gameData.categories[categoryId];
+            
+            // Добавляем категорию в найденные
+            if (!foundCategories.find(fc => fc.id === categoryId)) {
+                foundCategories.push({
+                    id: categoryId,
+                    name: category.name,
+                    colorClass: category.colorClass,
+                    description: category.description
+                });
+            }
+            
+            // Убираем найденные слова из игры
+            currentGameWords = currentGameWords.filter(word => 
+                !selectedWords.find(sw => sw.id === word.id)
+            );
+            
+            selectedWords = [];
+            
+            // Проверяем завершение игры
+            if (currentGameWords.length === 0) {
+                setTimeout(() => showGameMessage('🎉 Поздравляем! Вы выиграли!', true), 500);
+            }
+            
+            renderWords();
+            updateUI();
+        }
+
+        // Обработка неправильной догадки
+        function handleWrongGuess() {
+            mistakes++;
+            selectedWords = [];
+            
+            if (mistakes >= 4) {
+                setTimeout(() => showGameMessage('💀 Игра окончена! Попробуйте снова.', false), 500);
+            }
+            
+            renderWords();
+            updateUI();
+        }
+
+        // Показать сообщение о победе/проигрыше
+        function showGameMessage(message, isWin) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'game-message';
+            messageDiv.innerHTML = `
+                <h2>${message}</h2>
+                <p>Найдено категорий: ${foundCategories.length}/4</p>
+                <p>Ошибок: ${mistakes}/4</p>
+                <button onclick="this.parentElement.remove(); initGame();">Новая игра</button>
+            `;
+            
+            document.body.appendChild(messageDiv);
+        }
+    </script>
+</body>
+</html>
